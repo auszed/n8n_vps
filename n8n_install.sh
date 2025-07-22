@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# variables to change the domain
+N8N_DOMAIN="n8nserver.leadchoose.com"
+N8N_BASE_URL="https://$N8N_DOMAIN"
+
 # Docker Installation
 echo "🚀 Starting Docker installation..."
 sudo apt update
@@ -21,6 +25,11 @@ echo "✅ n8n data volume is ready!"
 # Docker Compose Setup
 echo "🐳 Setting up Docker Compose..."
 wget https://raw.githubusercontent.com/auszed/n8n_vps/refs/heads/main/compose.yaml -O compose.yaml
-export EXTERNAL_IP=http://"$(hostname -I | cut -f1 -d' ')"
+
+# this url its the global
+export EXTERNAL_IP="$N8N_BASE_URL"
+
+#we use the next for ip use
+#export EXTERNAL_IP=http://"$(hostname -I | cut -f1 -d' ')"
 sudo -E docker compose up -d
 echo "🎉 Installation complete! Access your service at: $EXTERNAL_IP"
