@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=n8nserver.leadchoose.com
+      - WEBHOOK_TUNNEL_URL=https://n8nserver.leadchoose.com/
+      - WEBHOOK_URL=https://n8nserver.leadchoose.com/
+      - NODE_ENV=production # Good practice for production environments
+    volumes:
+      - n8n_data:/home/node/.n8n # Changed from /root/.n8n as /home/node/.n8n is the default n8n data directory inside the container
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-conf:/etc/nginx/conf.d:ro # Mount local nginx-conf directory
+      - ./certbot/conf:/etc/letsencrypt # Mount Certbot configuration
+      - ./certbot/www:/var/www/certbot # Mount Certbot webroot for challenges
+    depends_on:
+      - n8n # Nginx depends on n8n being up
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: certonly --webroot -w /var/www/certbot --email your-email@example.com --agree-tos --no-eff-email -d n8nserver.leadchoose.com
+    # The `command` above will obtain the certificate. For renewal, you'll need a cron job or a separate service.
+    # Alternatively, you can use an Nginx proxy companion that handles Certbot automatically.
+    # For initial setup, you might run this service once, then comment it out or change its restart policy to 'no'
+    # after the certificates are obtained, relying on a host-level cron job for renewal or a dedicated certbot container.
+    # For a persistent auto-renewal solution, consider using a tool like `nginx-proxy` and `docker-letsencrypt-nginx-proxy-companion`.
+
+volumes:
+  n8n_data:
